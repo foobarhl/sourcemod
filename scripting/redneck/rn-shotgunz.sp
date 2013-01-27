@@ -27,14 +27,14 @@
 #include <smlib>
 #include <sdktools_sound.inc>
 
-#define VERSION "0.5"
+#define VERSION "0.6"
 
 public Plugin:myinfo = {
 	name = "RN-ShotGunz",
 	author = "[foo] bar",
 	description = "Custom weapon settings",
 	version = VERSION,
-	url = "http:/www.google.com"
+	url = "https://github.com/foobarhl/sourcemod/wiki/rn-shotgunz"
 };
 
 new String:configfile[PLATFORM_MAX_PATH]="";
