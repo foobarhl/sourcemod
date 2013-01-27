@@ -1,0 +1,15 @@
+This is Redneck's Sourcepawn.
+
+= FILES =
+ * rn-shotgunz.sp : Weapon customizer script
+ * rn-countdown.sp: Kill countdown sounds and actions
+ * rn-spectate.sp : Let players enter/exit spectate through chat commands
+ * rn-trails.sp   : Custom weapon trails and effects
+ * rn-gibs.sp     : Custom gibs
+
+= PREREQUISITES =
+
+ * smlib
+ * sdktools
+ * sdhooks
+
