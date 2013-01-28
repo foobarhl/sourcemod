@@ -1,5 +1,6 @@
 #include <sourcemod>
 #include <sdktools>
+#include <smlib>
 
 static String:ZombieSpawn[1001][128];
 new Handle:CanSpawn;
@@ -31,7 +32,6 @@ public OnPluginStart()
 	PrepFile("cfg/zombiefrequencies.cfg");
 
 	RegAdminCmd("z_addspawn", AddSpawn, ADMFLAG_CHEATS, "Creates a new zombie spawn where you stand.");
-	
 	CanSpawn = CreateConVar("z_enabled", "1", "Determines if zombies will be spawned.");
 	Population = CreateConVar("z_population", "default", "Determines which zombie population to spawn.");
 	Frequency = CreateConVar("z_frequency", "default", "Determines how often zombies will spawn.");
@@ -42,8 +42,20 @@ public OnPluginStart()
 	HookEntityOutput("npc_zombie", "OnDeath", ZombieDeath);
 }
 
+public SingleEntityDeath(const String:output[], NPC, Killer, Float:Delay)
+{
+	decl String:className[80];
+	GetEntityClassname(NPC,className,80);
+	PrintToServer("NPC Death: %d %d %s",NPC,Killer,output);
+	new client = Killer;//GetClientOfUserId(Killer);//GetEventInt(event, "userid"));
+
+//	Client_Print(Killer,ClientHudPrint_Notify,"Killed %s",className);
+	Client_SetScore(client,Client_GetScore(client)+1);
+//	CreateTimer(0.1, HeadcrabAI);
+}
 public ZombieDeath(const String:output[], NPC, Killer, Float:Delay)
 {
+	PrintToServer("NPC Death: %s %s %s",NPC,Killer,output);
 	CreateTimer(0.1, HeadcrabAI);
 }
 
@@ -66,12 +78,15 @@ public Action:HeadcrabAI(Handle:Timer)
 	}
 }
 
+/*
 enum dirMode 
 { 
     o=777, 
     g=777, 
     u=777 
 } 
+*/
+new dirMode = 511;
 
 public OnMapStart()
 {
@@ -232,6 +247,7 @@ public AddSpawnsFromFile(const String:MapName[])
 	CloseHandle(File);
 	return;
 }
+
 
 public Action:AddSpawn(Client, Args)
 {
@@ -612,6 +628,7 @@ public Occupied(Node)
 		if(IsValidEdict(Ents) && IsValidEntity(Ents))
 		{
 			GetEdictClassname(Ents, EntClass, 128);
+		        if (strcmp(EntClass, "soundent") == 0) continue;
 
 			if(StrContains(EntClass, "npc_", false) == 0)
 			{
@@ -707,6 +724,7 @@ public SpawnZombie()
 
 	DispatchKeyValue(Zombie, "angles", AngleString);
 
+	HookSingleEntityOutput(Zombie,"OnDeath",SingleEntityDeath,false);
 	DispatchSpawn(Zombie);
 
 	SetVariantString("player D_HT");
