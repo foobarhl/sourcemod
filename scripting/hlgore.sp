@@ -1,7 +1,10 @@
-//CS:S Goremod v5.3.2 by Joe 'DiscoBBQ' Maley:
+/* hlgore.sp:  HL2MP Goremod v6.0.0 by [foo] bar 
+ * This mod is based on CS:S Goremod v5.3.2 by Joe 'DiscoBBQ' Maley:
+ * 
+ * This mod deprecates the rn-gibs mod by [foo] bar.
+ */
 
-
-//jan 2013 - changed CSWeapon array to use hl2mp weapons - [foo] bar
+//jan 2013 - forked.  changed CSWeapon array to use hl2mp weapons - [foo] bar
 
 //Terminate:
 #pragma semicolon 1
@@ -9,13 +12,18 @@
 //Includes:
 #include <sourcemod>
 #include <sdktools>
+#include <sdkhooks>
 
 //Overflow:
 static Float:PrethinkBuffer;
 
 //Weapons:
 
-static String:CSWeapon[8][32] = {"crossbow", "smg1", "ar2", "shotgun", "pistol", "357", "frag", "crowbar" };
+const NumWeapons = 8;
+
+#define RAGDOLL_NAME "hl2mp_ragdoll"	// was cs_ragdoll
+
+static String:Weapons[NumWeapons][32] = {"crossbow", "smg1", "ar2", "shotgun", "pistol", "357", "frag", "crowbar" };
 
 //Convars:
 new Handle:hGibs;
@@ -28,21 +36,26 @@ new Handle:hDeathBlood;
 //Misc:
 new BloodClient[2000];
 
+new Bool:headshots[MAXPLAYERS+1];
+
+#define VERSION "6.0.0"
+
 //Information:
 public Plugin:myinfo =
 {
 
 	//Initialize:
-	name = "Goremod",
-	author = "Joe 'Pinkfairie' Maley",
-	description = "Adds Blood & Gore",
-	version = "5.3.2",
-	url = "hiimjoemaley@hotmail.com"
+	name = "HL2MP Goremod",
+	author = "[foo] bar",
+	description = "Adds Blood & Gore to HL2DM, based on CSS Gore by Joe 'DiscoBBQ' Maley",
+	version = VERSION,
+	url = "https://github.com/foobarhl/sourcemod"
 }
 
 //Parent to Dead Body:
 ParentToBody(Client, Particle, bool:Headshot = true)
 {
+//	PrintToServer("HLgore: ParentToBody(%d,%d,%d)",Client,Particle,Headshot);
 
 	//Client:
 	if(IsClientConnected(Client))
@@ -69,7 +82,8 @@ ParentToBody(Client, Particle, bool:Headshot = true)
 			GetClientModel(Client, ModelPath, 64);
 
 			//Body Exists:
-			if(IsValidEntity(Body) && StrEqual(Classname, "cs_ragdoll", false))
+//			PrintToServer("DEBUG: hlgore Classname=%s",Classname);
+			if(IsValidEntity(Body) && StrEqual(Classname, RAGDOLL_NAME, false))
 			{
 
 				//Properties:
@@ -81,7 +95,6 @@ ParentToBody(Client, Particle, bool:Headshot = true)
 				AcceptEntityInput(Particle, "SetParent", Particle, Particle, 0);
 				if(Headshot)
 				{
-					PrintToServer("cssgore: HEADSHOT!");
 			
 					//Work-Around:
 					if(StrContains(ModelPath, "sas", false) != -1 || StrContains(ModelPath, "gsg", false) != -1)
@@ -115,6 +128,7 @@ ParentToBody(Client, Particle, bool:Headshot = true)
 //Write:
 WriteParticle(Ent, String:ParticleName[], bool:Death = false, bool:Headshot = false)
 {
+//	PrintToServer("HLGore: WriteParticle(%d,%s,%d,%d)",Ent,ParticleName,Death,Headshot);
 
 	//Declare:
 	decl Particle;
@@ -400,7 +414,7 @@ stock RemoveBody(Client)
 		GetEdictClassname(BodyRagdoll, Classname, sizeof(Classname)); 
 
 		//Remove:
-		if(StrEqual(Classname, "cs_ragdoll", false)) RemoveEdict(BodyRagdoll);
+		if(StrEqual(Classname, RAGDOLL_NAME, false)) RemoveEdict(BodyRagdoll);
 	}
 }
 
@@ -517,25 +531,31 @@ public EventDeath(Handle:Event, const String:Name[], bool:Broadcast)
 	decl String:Weapon[64];
 
 	//Initialize:
+#if 0
 	Headshot = GetEventBool(Event, "headshot");
+#endif
 	Client = GetClientOfUserId(GetEventInt(Event, "userid"));
 	Attacker = GetClientOfUserId(GetEventInt(Event, "attacker"));
 	GetEventString(Event, "weapon", Weapon, sizeof(Weapon));
+
+	Headshot = headshots[Client];
+//	PrintToServer("HLGore: eventdeath headshot=%d",Headshot);
 
 	//Weapons:
 	if(GetConVarBool(hGibs)) 
 	{
 
 		//Loop:
-		for(new X = 0; X < 8; X++)
+		for(new X = 0; X < NumWeapons; X++)
 		{
 
 			//Check:
-			if(StrContains(Weapon, CSWeapon[X], false) != -1)
+			if(StrContains(Weapon, Weapons[X], false) != -1)
 			{
 
 				//Fake Attacker:
-				Attacker = 0;
+//				Attacker = 0;
+//PrintToServer("Fake attacker");
 			}
 		}
 	}
@@ -547,7 +567,7 @@ public EventDeath(Handle:Event, const String:Name[], bool:Broadcast)
 		//Headshot:
 		if(Headshot)
 		{
-			PrintToServer("CSS GORE HEADSHOT!");
+//			PrintToServer("CSS GORE HEADSHOT!");
 			//Declare:
 			decl Float:Origin[3], Float:AttackerOrigin[3], Float:Direction[3];
 
@@ -749,19 +769,40 @@ public OnMapStart()
 	ForcePrecache("blood_zombie_split_spray");
 }
 
+public OnClientPutInServer(client)
+{
+	SDKHook(client, SDKHook_TraceAttackPost,Event_TrackAttack);
+}
+
+public Action:Event_TrackAttack(victim, &attacker, &inflictor, &Float:damage, &damagetype, &ammotype, hitbox, hitgroup)
+{
+//	PrintToServer("TraceAttack: victim=%d,inflictor=%d,hitgroup=%d",victim,inflictor,hitgroup);
+	if(hitgroup==1)
+	{
+		headshots[victim]=true;
+	} else {
+		headshots[victim]=false;
+	}
+}
 //Initation:
 public OnPluginStart()
 {
 
 	//Register:
-	PrintToConsole(0, "[SM] Goremod v5.3.2 by Joe 'DiscoBBQ' Maley loaded successfully!");
+	PrintToConsole(0, "[SM] HL2MP Goremod %s by [foo] bar. Based on CSS Gore Mod 5.3.2 by Joe 'DiscoBBQ' Maley loaded successfully!", VERSION);
 
 	//Events:
 	HookEvent("player_hurt", EventDamage);
 	HookEvent("player_death", EventDeath);
+	for(new i=1;i<MaxClients;i++){
+		if(IsClientInGame(i))
+		{
+			SDKHook(i, SDKHook_TraceAttackPost,Event_TrackAttack);
+		}
+	}
 
 	//Server Variable:
-	CreateConVar("cssgore_version", "5.3.2", "Goremod Version",FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_UNLOGGED|FCVAR_DONTRECORD|FCVAR_REPLICATED|FCVAR_NOTIFY);
+	CreateConVar("hl2gore_version", VERSION, "HL2MP Goremod Version",FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_UNLOGGED|FCVAR_DONTRECORD|FCVAR_REPLICATED|FCVAR_NOTIFY);
 
 	//Convars:
 	hGibs =  CreateConVar("sm_gibs_enabled", "1", "Enable/disable skull/limbs/bones/etc.");
