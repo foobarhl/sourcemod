@@ -1,7 +1,7 @@
 //CS:S Goremod v5.3.2 by Joe 'DiscoBBQ' Maley:
 
 
-//jan 2013 - changed CSWeapon array to use hl2mp weapons
+//jan 2013 - changed CSWeapon array to use hl2mp weapons - [foo] bar
 
 //Terminate:
 #pragma semicolon 1
