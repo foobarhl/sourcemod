@@ -38,7 +38,7 @@ new BloodClient[2000];
 
 new Bool:headshots[MAXPLAYERS+1];
 
-#define VERSION "6.0.0"
+#define VERSION "6.0.1"
 
 //Information:
 public Plugin:myinfo =
@@ -302,6 +302,10 @@ stock CalculateDirection(Float:ClientOrigin[3], Float:AttackerOrigin[3], Float:D
 	//Close:
 	return;
 }
+public Action:Gib_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damagetype)
+{
+	PrintToServer("Gib took damage");
+}
 
 //Gib:
 stock Gib(Float:Origin[3], Float:Direction[3], String:Model[])
@@ -318,15 +322,30 @@ stock Gib(Float:Origin[3], Float:Direction[3], String:Model[])
 	Velocity[0] = Direction[0] * 400.0;
 	Velocity[1] = Direction[0] * 400.0;
 	Velocity[2] = Direction[0] * 400.0;
-		
 	//Anti-Crash:
 	if(Ent < MaxEnts)
 	{
+		PrintToServer("Gib %s",Model);
 
 		//Properties:
 		DispatchKeyValue(Ent, "model", Model);
+#if 0
+		new flags;
+		flags = 1048576;	
+		SetEntityFlags(Ent,flags);
+
+		if(DispatchKeyValueFloat(Ent,"forcetoenablemotion",10.0)==false){
+			PrintToServer("forcetoenablemotion fail");
+		}
+		DispatchKeyValueFloat(Ent,"ExplodeDamage",150.0);
+		DispatchKeyValueFloat(Ent,"ExplodeRadius",400.0);
+//		AcceptEntityInput(Ent,"physdamagescale",0.1);
+		DispatchKeyValueFloat(Ent,"inertiaScale",1.0);		
+//		AcceptEntityInput(Ent,"EnableDamageForces");
 		SetEntProp(Ent, Prop_Send, "m_CollisionGroup", 1); 
 
+//		SDKHook(Ent,SDKHook_OnTakeDamage,Gib_OnTakeDamage);
+#endif
 		//Spawn:
 		DispatchSpawn(Ent);
 		
@@ -353,6 +372,8 @@ stock Gib(Float:Origin[3], Float:Direction[3], String:Model[])
 
 		//Delete:
 		CreateTimer(GetRandomFloat(15.0, 30.0), RemoveGib, Ent);
+	} else {
+		PrintToServer("Not creating gib too many entities");
 	}
 }
 
@@ -554,8 +575,8 @@ public EventDeath(Handle:Event, const String:Name[], bool:Broadcast)
 			{
 
 				//Fake Attacker:
-//				Attacker = 0;
-//PrintToServer("Fake attacker");
+				Attacker = 0;
+				PrintToServer("Fake attacker");
 			}
 		}
 	}
