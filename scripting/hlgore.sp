@@ -325,7 +325,7 @@ stock Gib(Float:Origin[3], Float:Direction[3], String:Model[])
 	//Anti-Crash:
 	if(Ent < MaxEnts)
 	{
-		PrintToServer("Gib %s",Model);
+//		PrintToServer("Gib %s",Model);
 
 		//Properties:
 		DispatchKeyValue(Ent, "model", Model);
@@ -576,7 +576,7 @@ public EventDeath(Handle:Event, const String:Name[], bool:Broadcast)
 
 				//Fake Attacker:
 				Attacker = 0;
-				PrintToServer("Fake attacker");
+//				PrintToServer("Fake attacker");
 			}
 		}
 	}
