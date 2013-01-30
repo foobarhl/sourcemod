@@ -4,10 +4,18 @@
  * This mod deprecates the rn-gibs mod by [foo] bar.
  */
 
-//jan 2013 - forked.  changed CSWeapon array to use hl2mp weapons - [foo] bar
+/* 
+ * CVars:
+ * 
+ * sm_gibs_enabled              : 1 = Enable or 0 = disable.
+ * sm_bleeding_frequency        : Time between bleeding. dfl 15
+ * sm_bleeding_health           : HP required to start bleeding. dfl 99
+ * sm_impact_blood_multiplier   : Multiplier for amount of extra blood on normal impact damage. dfl 2
+ * sm_headshot_blood_multiplier : Multiplier for amount of extra blood on headshot kills. dfl 1
+ * sm_death_blood_multiplier    : Multiplier for amount of extra blood on normal deaths. dfl 1
+ * sm_gib_velocity_multiplier   : Multiplier for velocity of gibs.  Lower (100-300) keeps gibs closer to body. dfl 300
+ */
 
-//Terminate:
-#pragma semicolon 1
 
 //Includes:
 #include <sourcemod>
@@ -32,6 +40,7 @@ new Handle:hBleedingFreq;
 new Handle:hImpactBlood;
 new Handle:hHeadshotBlood;
 new Handle:hDeathBlood;
+new Handle:hVelocityMulti;
 
 //Misc:
 new BloodClient[2000];
@@ -317,12 +326,13 @@ stock Gib(Float:Origin[3], Float:Direction[3], String:Model[])
 	decl Float:Velocity[3];
 
 	//Initialize:
-	Ent = CreateEntityByName("prop_physics");
-	MaxEnts = (0.9 * GetMaxEntities());
-	Velocity[0] = Direction[0] * 400.0;
-	Velocity[1] = Direction[0] * 400.0;
-	Velocity[2] = Direction[0] * 400.0;
+	Ent = CreateEntityByName("prop_physics"); MaxEnts = (0.9 *
+	GetMaxEntities()); 
+	Velocity[0] = Direction[0] * GetConVarFloat(hVelocityMulti); 
+	Velocity[1] = Direction[0] * GetConVarFloat(hVelocityMulti); 
+	Velocity[2] = Direction[0] * GetConVarFloat(hVelocityMulti); 
 	//Anti-Crash:
+
 	if(Ent < MaxEnts)
 	{
 //		PrintToServer("Gib %s",Model);
@@ -832,4 +842,5 @@ public OnPluginStart()
 	hImpactBlood = CreateConVar("sm_impact_blood_multiplier", "2", "Multiplier for amount of extra blood on normal impact damage.");
 	hHeadshotBlood = CreateConVar("sm_headshot_blood_multiplier", "1", "Multiplier for amount of extra blood on headshot kills.");
 	hDeathBlood = CreateConVar("sm_death_blood_multiplier", "1", "Multiplier for amount of extra blood on normal deaths.");
+	hVelocityMulti = CreateConVar("sm_gib_velocity_multiplier","300","Multiplier for velocity of gibs");
 }
