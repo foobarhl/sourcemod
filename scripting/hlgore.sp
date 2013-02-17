@@ -14,6 +14,7 @@
  * sm_headshot_blood_multiplier : Multiplier for amount of extra blood on headshot kills. dfl 1
  * sm_death_blood_multiplier    : Multiplier for amount of extra blood on normal deaths. dfl 1
  * sm_gib_velocity_multiplier   : Multiplier for velocity of gibs.  Lower (100-300) keeps gibs closer to body. dfl 300
+ * sm_gib_remove_body           : Whether or not to remove the body on death.  0 = no, 1 = yes.  Leave to 0 if you use a dissolver script
  */
 
 
