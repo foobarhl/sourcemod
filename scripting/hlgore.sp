@@ -30,6 +30,7 @@ static Float:PrethinkBuffer;
 const NumWeapons = 8;
 
 #define RAGDOLL_NAME "hl2mp_ragdoll"	// was cs_ragdoll
+#define PHYSICS_NAME "prop_physics"
 
 static String:Weapons[NumWeapons][32] = {"crossbow", "smg1", "ar2", "shotgun", "pistol", "357", "frag", "crowbar" };
 
@@ -41,13 +42,13 @@ new Handle:hImpactBlood;
 new Handle:hHeadshotBlood;
 new Handle:hDeathBlood;
 new Handle:hVelocityMulti;
-
+new Handle:hRemoveBody;
 //Misc:
 new BloodClient[2000];
 
 new Bool:headshots[MAXPLAYERS+1];
 
-#define VERSION "6.0.1"
+#define VERSION "6.0.3"
 
 //Information:
 public Plugin:myinfo =
@@ -326,11 +327,13 @@ stock Gib(Float:Origin[3], Float:Direction[3], String:Model[])
 	decl Float:Velocity[3];
 
 	//Initialize:
-	Ent = CreateEntityByName("prop_physics"); MaxEnts = (0.9 *
-	GetMaxEntities()); 
+	Ent = CreateEntityByName(PHYSICS_NAME); 
+	MaxEnts = (0.9 * GetMaxEntities()); 
+
 	Velocity[0] = Direction[0] * GetConVarFloat(hVelocityMulti); 
 	Velocity[1] = Direction[0] * GetConVarFloat(hVelocityMulti); 
 	Velocity[2] = Direction[0] * GetConVarFloat(hVelocityMulti); 
+
 	//Anti-Crash:
 
 	if(Ent < MaxEnts)
@@ -356,11 +359,23 @@ stock Gib(Float:Origin[3], Float:Direction[3], String:Model[])
 
 //		SDKHook(Ent,SDKHook_OnTakeDamage,Gib_OnTakeDamage);
 #endif
+
+		
+		DispatchKeyValue(Ent,"spawnflags","1049600");
+		DispatchKeyValue(Ent,"physicsmode","1");
+		DispatchKeyValue(Ent,"health","90");
+		DispatchKeyValue(Ent,"inertiaScale","1");		
+		DispatchKeyValueFloat(Ent,"ExplodeDamage",150.0);
+		DispatchKeyValueFloat(Ent,"ExplodeRadius",400.0);
+		DispatchKeyValueFloat(Ent,"forcetoenablemotion",10.0)
 		//Spawn:
 		DispatchSpawn(Ent);
 		
 		//Send:
 		TeleportEntity(Ent, Origin, Direction, Velocity);
+		SetEntityMoveType(Ent, MOVETYPE_VPHYSICS);
+
+		AcceptEntityInput(Ent,"EnableMotion");
 
 		//Blood:
 		Roll = GetRandomInt(1, 5);
@@ -424,7 +439,7 @@ public Action:RemoveGib(Handle:Timer, any:Ent)
 		GetEdictClassname(Ent, Classname, sizeof(Classname)); 
 
 		//Kill:
-		if(StrEqual(Classname, "prop_physics", false)) RemoveEdict(Ent);
+		if(StrEqual(Classname, PHYSICS_NAME, false)) RemoveEdict(Ent);
 	}
 }
 
@@ -674,13 +689,14 @@ public EventDeath(Handle:Event, const String:Name[], bool:Broadcast)
 		{
 
 			//Animate:
+//			RandomGib(Origin,"models/props_borealis/bluebarrel001.mdl");
 			RandomGib(Origin, "models/Gibs/HGIBS.mdl");
 			RandomGib(Origin, "models/Gibs/HGIBS_rib.mdl");
 			RandomGib(Origin, "models/Gibs/HGIBS_spine.mdl");
 			RandomGib(Origin, "models/Gibs/HGIBS_scapula.mdl");
 
 			//Remove Body:
-			if(GetConVarBool(hGibs)) RemoveBody(Client);
+			if(GetConVarBool(hGibs) && GetConVarBool(hRemoveBody)) RemoveBody(Client);
 
 			//Declare:
 			decl Float:Direction[3];
@@ -778,6 +794,7 @@ public OnMapStart()
 {
 
 	//Gibs:
+	PrecacheModel("models/props_borealis/bluebarrel001.mdl",true);
 	PrecacheModel("models/Gibs/HGIBS.mdl", true);
 	PrecacheModel("models/Gibs/HGIBS_rib.mdl", true);
 	PrecacheModel("models/Gibs/HGIBS_spine.mdl", true);
@@ -843,4 +860,5 @@ public OnPluginStart()
 	hHeadshotBlood = CreateConVar("sm_headshot_blood_multiplier", "1", "Multiplier for amount of extra blood on headshot kills.");
 	hDeathBlood = CreateConVar("sm_death_blood_multiplier", "1", "Multiplier for amount of extra blood on normal deaths.");
 	hVelocityMulti = CreateConVar("sm_gib_velocity_multiplier","300","Multiplier for velocity of gibs");
+	hRemoveBody = CreateConVar("sm_gib_remove_body","0","Remove the body on death");
 }
