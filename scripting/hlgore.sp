@@ -15,6 +15,8 @@
  * sm_death_blood_multiplier    : Multiplier for amount of extra blood on normal deaths. dfl 1
  * sm_gib_velocity_multiplier   : Multiplier for velocity of gibs.  Lower (100-300) keeps gibs closer to body. dfl 300
  * sm_gib_remove_body           : Whether or not to remove the body on death.  0 = no, 1 = yes.  Leave to 0 if you use a dissolver script
+ * sm_gib_remove_minsecs        : Minimum amount of time gibs should hang around for
+ * sm_gib_remove_maxsecs        : Maximum amount of time gibs should hang around for
  */
 
 
@@ -44,12 +46,15 @@ new Handle:hHeadshotBlood;
 new Handle:hDeathBlood;
 new Handle:hVelocityMulti;
 new Handle:hRemoveBody;
+new Handle:hMinRemove;
+new Handle:hMaxRemove;
+
 //Misc:
 new BloodClient[2000];
 
 new Bool:headshots[MAXPLAYERS+1];
 
-#define VERSION "6.0.3"
+#define VERSION "6.0.4"
 
 //Information:
 public Plugin:myinfo =
@@ -397,7 +402,7 @@ stock Gib(Float:Origin[3], Float:Direction[3], String:Model[])
 		if(Roll == 5) WriteParticle(Ent, "blood_advisor_pierce_spray");
 
 		//Delete:
-		CreateTimer(GetRandomFloat(15.0, 30.0), RemoveGib, Ent);
+		CreateTimer(GetRandomFloat(GetConVarFloat(hMinRemove),GetConVarFloat(hMaxRemove)), RemoveGib, Ent);
 	} else {
 		PrintToServer("Not creating gib too many entities");
 	}
@@ -862,4 +867,6 @@ public OnPluginStart()
 	hDeathBlood = CreateConVar("sm_death_blood_multiplier", "1", "Multiplier for amount of extra blood on normal deaths.");
 	hVelocityMulti = CreateConVar("sm_gib_velocity_multiplier","300","Multiplier for velocity of gibs");
 	hRemoveBody = CreateConVar("sm_gib_remove_body","0","Remove the body on death");
+	hMinRemove = CreateConVar("sm_gib_remove_minsecs","15.0","Minimum amount of time gibs should hang around for");
+	hMaxRemove = CreateConVar("sm_gib_remove_maxsecs","30.0","Maximum amount of time gibs should hang around for");
 }
