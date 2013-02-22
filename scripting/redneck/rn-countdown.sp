@@ -27,7 +27,7 @@
 #include <smlib>
 #include <sdktools_sound.inc>
 
-#define VERSION "0.3"
+#define VERSION "0.4"
 
 public Plugin:myinfo = {
 	name = "RN-Countdown",
@@ -151,9 +151,16 @@ public PrecacheSounds()
 	KvGotoFirstSubKey(configfilefh);
 
 	decl String:buffer[255];
+	decl String:buffer2[255];
 
 	do{
 		KvGetString(configfilefh,"sound",buffer,sizeof(buffer));
+		Format(buffer2,sizeof(buffer2),"sound/%s",buffer);
+
+		PrintToServer("rn-countdown: AddFileToDownloadsTable %s",buffer2);
+		AddFileToDownloadsTable(buffer2);
+
+		PrintToServer("rn-countdown: PrecacheSound(%s,true)",buffer);
 		if(PrecacheSound(buffer,true)==false){
 		} else {
 		}
