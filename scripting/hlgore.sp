@@ -17,6 +17,7 @@
  * sm_gib_remove_body           : Whether or not to remove the body on death.  0 = no, 1 = yes.  Leave to 0 if you use a dissolver script
  * sm_gib_remove_minsecs        : Minimum amount of time gibs should hang around for
  * sm_gib_remove_maxsecs        : Maximum amount of time gibs should hang around for
+ * sm_gib_collision_group       : Collision group Gibs should be grouped with.  Setting to 1 should prevent players colliding with gibs
  */
 
 
@@ -48,13 +49,14 @@ new Handle:hVelocityMulti;
 new Handle:hRemoveBody;
 new Handle:hMinRemove;
 new Handle:hMaxRemove;
+new Handle:hGibCollisionGroup;
 
 //Misc:
 new BloodClient[2000];
 
 new Bool:headshots[MAXPLAYERS+1];
 
-#define VERSION "6.0.4"
+#define VERSION "6.0.5"
 
 //Information:
 public Plugin:myinfo =
@@ -374,6 +376,10 @@ stock Gib(Float:Origin[3], Float:Direction[3], String:Model[])
 		DispatchKeyValueFloat(Ent,"ExplodeDamage",150.0);
 		DispatchKeyValueFloat(Ent,"ExplodeRadius",400.0);
 		DispatchKeyValueFloat(Ent,"forcetoenablemotion",10.0)
+
+		if(GetConVarInt(hGibCollisionGroup)>0){
+			SetEntProp(Ent, Prop_Send, "m_CollisionGroup", GetConVarInt(hGibCollisionGroup));
+		}
 		//Spawn:
 		DispatchSpawn(Ent);
 		
@@ -869,4 +875,5 @@ public OnPluginStart()
 	hRemoveBody = CreateConVar("sm_gib_remove_body","0","Remove the body on death");
 	hMinRemove = CreateConVar("sm_gib_remove_minsecs","15.0","Minimum amount of time gibs should hang around for");
 	hMaxRemove = CreateConVar("sm_gib_remove_maxsecs","30.0","Maximum amount of time gibs should hang around for");
+	hGibCollisionGroup = CreateConVar("sm_gib_collision_group","0","Collision group Gibs should be grouped with");
 }
