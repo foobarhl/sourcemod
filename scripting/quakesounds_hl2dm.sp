@@ -4,7 +4,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "2.7"
+#define PLUGIN_VERSION "2.7foobar1"
 
 // Plugin definitions
 public Plugin:myinfo = 
@@ -56,6 +56,7 @@ new Handle:cvarAnnounce = INVALID_HANDLE;
 new Handle:cvarTextDefault = INVALID_HANDLE;
 new Handle:cvarSoundDefault = INVALID_HANDLE;
 new Handle:cvarVolume = INVALID_HANDLE;
+new Handle:cvarMp = INVALID_HANDLE;
 
 new iMaxClients;
 
@@ -95,6 +96,7 @@ public OnPluginStart()
 	cvarTextDefault = CreateConVar("sm_quakesounds_text", "1", "Default text setting for new users");
 	cvarSoundDefault = CreateConVar("sm_quakesounds_sound", "1", "Default sound for new users, 1=Standard, 2=Female, 0=Disabled");
 	cvarVolume = CreateConVar("sm_quakesounds_volume", "1.0", "Volume: should be a number between 0.0. and 1.0");
+	cvarMp = FindConVar("mp_teamplay");
 
 	if(GetConVarBool(cvarEnabled)) 
 	{
@@ -483,7 +485,7 @@ public EventPlayerDeath(Handle:event, const String:name[], bool:dontBroadcast)
 				soundId = SELFKILL;
 			}
 		}
-		else if(GetClientTeam(attackerClient) == GetClientTeam(victimClient))
+		else if(GetClientTeam(attackerClient) == GetClientTeam(victimClient) && GetConVarBool(cvarMp) != false)
 		{
 			consecutiveKills[attackerClient] = 0;
 			
