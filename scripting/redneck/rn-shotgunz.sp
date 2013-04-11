@@ -27,7 +27,7 @@
 #include <smlib>
 #include <sdktools_sound.inc>
 #include <sdkhooks>
-#define VERSION "0.8a"
+#define VERSION "0.8b"
 
 public Plugin:myinfo = {
 	name = "RN-ShotGunz",
@@ -64,7 +64,7 @@ public OnAllPluginsLoaded()	// from superlogs-hl2mp.sp
 {
 	if (GetExtensionFileStatus("sdkhooks.ext") != 1)
 	{
-		SetFailState("SDK Hooks v1.3 or higher is required for SuperLogs: HL2MP");
+		SetFailState("SDK Hooks v1.3 or higher is required for rn-shotgunz");
 	}
 	for (new i = 1; i <= MaxClients; i++)
 	{
@@ -83,7 +83,7 @@ public Action:OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damage
 	cv_disablering = GetConVarInt(FindConVar("rn_noearbleed"));
 
 	// disable ringing - https://forums.alliedmods.net/showthread.php?p=1929755#post1929755
-	PrintToServer("rn-shotgunz: ONTakeDamage %d %d damage=%f damagetype=%d %s",victim,attacker,damage,damagetype,weapon);
+//	PrintToServer("rn-shotgunz: ONTakeDamage %d %d damage=%f damagetype=%d %s",victim,attacker,damage,damagetype,weapon);
 	if(damagetype & DMG_BLAST && cv_disablering)
 	{	
 		damagetype = DMG_GENERIC;
@@ -95,7 +95,7 @@ public Action:OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damage
 public Action:Event_PlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
-	PrintToServer("rn-shotgunz: Event_PlayerSpawn	");
+//	PrintToServer("rn-shotgunz: Event_PlayerSpawn	");
 	new pluginEnabled = GetConVarInt(FindConVar("shotgunz_enabled"));
 
 	if(pluginEnabled != 1 ){
@@ -148,7 +148,7 @@ public Action:Event_PlayerSpawn(Handle:event, const String:name[], bool:dontBroa
 		
 		removeweapon = KvGetNum(configfilefh,"remove",0);
 		if(removeweapon == 0 ){
-			PrintToServer("Giving client '%s'", weapon);
+//			PrintToServer("Giving client '%s'", weapon);
 			new wepent = Client_GiveWeapon(client,weapon,false);
 			if(wepent==INVALID_ENT_REFERENCE){
 				PrintToServer("Failed to give client %d weapon %s",client,weapon);
@@ -167,7 +167,7 @@ public Action:Event_PlayerSpawn(Handle:event, const String:name[], bool:dontBroa
 				}
 			}
 		} else {
-			PrintToServer("Scheduling removal %s from %d", weapon, client);
+//			PrintToServer("Scheduling removal %s from %d", weapon, client);
 /*
 			CreateDataTimer(0.9, RemoveWeapon, param);
 			WritePackCell(param, client);
