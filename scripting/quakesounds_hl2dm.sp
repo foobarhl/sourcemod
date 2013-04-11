@@ -1,10 +1,11 @@
 #include <sourcemod>
 #include <sdktools>
 #include <clientprefs>
+#include <sdkhooks>
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "2.7foobar1"
+#define PLUGIN_VERSION "2.7foobar2"
 
 // Plugin definitions
 public Plugin:myinfo = 
@@ -67,7 +68,9 @@ new consecutiveKills[MAXPLAYERS + 1];
 new Float:lastKillTime[MAXPLAYERS + 1];
 new lastKillCount[MAXPLAYERS + 1];
 new headShotCount[MAXPLAYERS + 1];
-#if defined DODS
+#if defined DODS 
+new hurtHitGroup[MAXPLAYERS + 1];
+#elseif defined HL2DM
 new hurtHitGroup[MAXPLAYERS + 1];
 #endif
 
@@ -162,6 +165,17 @@ public OnPluginStart()
 		}	
 	}
 }
+
+#if defined HL2DM
+public OnAllPluginsLoaded()
+{
+	for(new i = 1; i <= MaxClients; i++){
+		if(!IsClientConnected(i) && IsClientInGame(i) && !IsFakeClient(i)){
+			SDKHook(i, SDKHook_TraceAttackPost, OnTraceAttack);
+		}
+	}
+}
+#endif
 
 //add to clientpref's built-in !settings menu
 public QuakePrefSelected(client, CookieMenuAction:action, any:info, String:buffer[], maxlen)
@@ -359,6 +373,8 @@ public NewRoundInitialization()
 		lastKillTime[i] = -1.0;
 		#if defined DODS
 		hurtHitGroup[i] = 0;
+		#elseif defined HL2DM
+		hurtHitGroup[i] = 0;
 		#endif
 	}
 }
@@ -404,6 +420,12 @@ public OnClientPutInServer(client)
 				EmitSoundToClient(client, soundsFiles[filePosition], _, _, _, _, GetConVarFloat(cvarVolume));
 			}
 		}
+
+		#if defined HL2DM
+		if(IsClientConnected(client)){
+			SDKHook(client,SDKHook_TraceAttackPost,OnTraceAttack);
+		}
+		#endif
 	}
 	else
 	{
@@ -463,6 +485,15 @@ public EventPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast)
 }
 #endif
 
+#if defined HL2DM
+public OnTraceAttack(victim, attacker, inflictor, Float:damage, damagetype, ammotype, hitbox, hitgroup)
+{
+	if (hitgroup > 0 && attacker > 0 && attacker <= MaxClients && victim > 0 && victim <= MaxClients){
+		hurtHitGroup[victim] = hitgroup;
+	}
+}
+#endif
+
 public EventPlayerDeath(Handle:event, const String:name[], bool:dontBroadcast)
 {	
 	new attackerClient = GetClientOfUserId(GetEventInt(event, "attacker"));
@@ -507,6 +538,8 @@ public EventPlayerDeath(Handle:event, const String:name[], bool:dontBroadcast)
 				new bool:headshot = (customkill == 1);
 			#elseif defined DODS
 				new bool:headshot = (hurtHitGroup[victimClient] == 1);			
+			#elseif defined HL2DM
+				new bool:headshot = (hurtHitGroup[victimClient] == 1);
 			#else
 				new bool:headshot = false;
 			#endif		
@@ -587,6 +620,8 @@ public EventPlayerDeath(Handle:event, const String:name[], bool:dontBroadcast)
 	}
 	
 	#if defined DODS
+		hurtHitGroup[victimClient] = 0;
+	#elseif defined HL2DM
 		hurtHitGroup[victimClient] = 0;
 	#endif
 
