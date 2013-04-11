@@ -32,7 +32,7 @@ public Plugin:myinfo = {
 
 public OnPluginStart()
 {
-	CreateConVar("rn_noearbleed_version",VERSION,"Version of this plugin", FCVAR_DONTRECORD|FCVAR_PLUGIN|FCVAR_NOTIFY);
+	CreateConVar("sm_noearbleed_version",VERSION,"Version of this plugin", FCVAR_DONTRECORD|FCVAR_PLUGIN|FCVAR_NOTIFY);
 }
 
 public OnClientPutInServer(client)	// from superlogs-hl2mp.sp
