@@ -27,7 +27,8 @@
 #include <smlib>
 #include <sdktools_sound.inc>
 #include <sdkhooks>
-#define VERSION "0.8b"
+
+#define VERSION "0.8d"
 
 public Plugin:myinfo = {
 	name = "RN-ShotGunz",
@@ -37,9 +38,14 @@ public Plugin:myinfo = {
 	url = "https://github.com/foobarhl/sourcemod/wiki/rn-shotgunz"
 };
 
+#define USE_WEAPON_FAKECOMMAND 0
+
 new String:configfile[PLATFORM_MAX_PATH]="";
 new Handle:configfilefh = INVALID_HANDLE;
 new Handle:cv_disablering = INVALID_HANDLE;
+new Handle:autochangewep = INVALID_HANDLE;
+new Handle:usetimer = INVALID_HANDLE;
+new Handle:maphasmanager = false;
 
 public OnPluginStart()
 {
@@ -47,13 +53,36 @@ public OnPluginStart()
 	CreateConVar("shotgunz_enabled","1","Enable/disable shotgunz plugin");		// set to 1 to enable this plugin. do not rename this cvar.
 	CreateConVar("rn_noearbleed","1","Disables explosion ringing");
 
+	// debugging cvars
+	autochangewep = CreateConVar("shotgunz_autochangeweapon","1","Specifies whether to change player weapon to one marked default");
+	usetimer = CreateConVar("shotgunz_usetimer","0","Specifies whether to use a timer");
+
 	LoadConfig();
 
 	PrintToServer("rn_shotgunz %s loaded", VERSION);
 	HookEvent("player_spawn",Event_PlayerSpawn);
 }
 
+public OnMapStart()
+{
+	new idx = FindEntityByClassname(-1,"game_weapon_manager");
+	PrintToServer("***** OnMapStart");
+	if(idx == -1 ){
+//		PrintToServer("rn-shotgunz: running on this map");
+	} else {
+		PrintToServer("rn-shotgunz: MAP has a game_weapon_manager; disabling for this map.");
+		maphasmanager = true;
+	}
 
+	idx = FindEntityByClassname(-1,"game_player_equip");
+	PrintToServer("***** OnMapStart");
+	if(idx == -1 ){
+//		PrintToServer("rn-shotgunz: running on this map");
+	} else {
+		PrintToServer("rn-shotgunz: MAP has a game_player_equip; disabling for this map.");
+		maphasmanager = true;
+	}
+}
 public OnClientPutInServer(client)	// from superlogs-hl2mp.sp
 {
 	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
@@ -75,15 +104,12 @@ public OnAllPluginsLoaded()	// from superlogs-hl2mp.sp
 	}
 }
 
-//public Action:OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damagetype)
-public Action:OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damagetype, &weapon,
-                Float:damageForce[3], Float:damagePosition[3], damagecustom)
+public Action:OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damagetype, &weapon, Float:damageForce[3], Float:damagePosition[3], damagecustom)
 {	
 
 	cv_disablering = GetConVarInt(FindConVar("rn_noearbleed"));
 
 	// disable ringing - https://forums.alliedmods.net/showthread.php?p=1929755#post1929755
-//	PrintToServer("rn-shotgunz: ONTakeDamage %d %d damage=%f damagetype=%d %s",victim,attacker,damage,damagetype,weapon);
 	if(damagetype & DMG_BLAST && cv_disablering)
 	{	
 		damagetype = DMG_GENERIC;
@@ -94,7 +120,27 @@ public Action:OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damage
 
 public Action:Event_PlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
 {
+	if(maphasmanager==true){
+		return(Plugin_Continue);
+	}
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	if(GetConVarBool(usetimer)==false){
+		GivePlayerWeapons(client);
+	} else {
+		CreateTimer(5.0,GivePlayerWeaponsTimer,client);
+	}
+	return(Plugin_Continue);
+}
+
+public Action:GivePlayerWeaponsTimer(Handle:timer, any:client)
+{
+	GivePlayerWeapons(client);
+}
+public GivePlayerWeapons(client)
+{
+
+	new wepent;
+
 //	PrintToServer("rn-shotgunz: Event_PlayerSpawn	");
 	new pluginEnabled = GetConVarInt(FindConVar("shotgunz_enabled"));
 
@@ -116,7 +162,7 @@ public Action:Event_PlayerSpawn(Handle:event, const String:name[], bool:dontBroa
 	new String:weapon[20];
 	decl String:defaultweapon[20] = "";
 	new removeweapon=0;
-
+	new defaultw=false;
 /* The GTX seems to override Client_GiveWeaponAndAmmo params, so this is commented out for now. */
 /*
 	new primaryclip;
@@ -127,7 +173,7 @@ public Action:Event_PlayerSpawn(Handle:event, const String:name[], bool:dontBroa
 
 */
 	do{
-				
+
 		KvGetSectionName(configfilefh,weapon,sizeof(weapon));
 
 /* The GTX seems to override Client_GiveWeaponAndAmmo params, so this is commented out for now. */
@@ -141,28 +187,31 @@ public Action:Event_PlayerSpawn(Handle:event, const String:name[], bool:dontBroa
 
 		if(strcmp(buffer,"",false)!=0){
 			strcopy(defaultweapon,sizeof(defaultweapon),weapon);
+			defaultw=true;
 		}
 
 		
 
 		
 		removeweapon = KvGetNum(configfilefh,"remove",0);
+
 		if(removeweapon == 0 ){
-//			PrintToServer("Giving client '%s'", weapon);
-			new wepent = Client_GiveWeapon(client,weapon,false);
+			PrintToServer("Giving client '%d' '%s' default=%d", client,weapon,defaultw);
+			wepent = Client_GiveWeapon(client,weapon,false);
+
 			if(wepent==INVALID_ENT_REFERENCE){
 				PrintToServer("Failed to give client %d weapon %s",client,weapon);
 			} else {
 				decl underwater;
 				underwater=KvGetNum(configfilefh,"p_underwater",0);
 				if(underwater==1){
-					PrintToServer("Make %s primary fire underwater",weapon);
+//					PrintToServer("Make %s primary fire underwater",weapon);
 					SetEntProp(wepent,Prop_Data,"m_bFiresUnderwater",1);
 				}
 
 				underwater=KvGetNum(configfilefh,"a_underwater",0);
 				if(underwater==1){
-					PrintToServer("Make %s alt fire underwater",weapon);
+//					PrintToServer("Make %s alt fire underwater",weapon);
 					SetEntProp(wepent,Prop_Data,"m_bAltFiresUnderwater",1);
 				}
 			}
@@ -177,11 +226,10 @@ public Action:Event_PlayerSpawn(Handle:event, const String:name[], bool:dontBroa
 
 	} while(KvGotoNextKey(configfilefh));
 
-	if(strcmp(defaultweapon,"",false) != 0){
+	if(GetConVarBool(autochangewep)==true && strcmp(defaultweapon,"",false) != 0){
 		FakeClientCommandEx(client,"use %s", defaultweapon);
 	}
-
-	return(Plugin_Handled);
+	return(Plugin_Continue);
 }
 
 public Action:RemoveWeapon(Handle:Timer, any: param)
