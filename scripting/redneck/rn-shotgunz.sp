@@ -28,7 +28,7 @@
 #include <sdktools_sound.inc>
 #include <sdkhooks>
 
-#define VERSION "0.8d"
+#define VERSION "0.8e"
 
 public Plugin:myinfo = {
 	name = "RN-ShotGunz",
@@ -66,7 +66,6 @@ public OnPluginStart()
 public OnMapStart()
 {
 	new idx = FindEntityByClassname(-1,"game_weapon_manager");
-	PrintToServer("***** OnMapStart");
 	if(idx == -1 ){
 //		PrintToServer("rn-shotgunz: running on this map");
 	} else {
@@ -75,7 +74,6 @@ public OnMapStart()
 	}
 
 	idx = FindEntityByClassname(-1,"game_player_equip");
-	PrintToServer("***** OnMapStart");
 	if(idx == -1 ){
 //		PrintToServer("rn-shotgunz: running on this map");
 	} else {
