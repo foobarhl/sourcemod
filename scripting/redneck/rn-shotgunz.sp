@@ -28,7 +28,7 @@
 #include <sdktools_sound.inc>
 #include <sdkhooks>
 
-#define VERSION "0.8f"
+#define VERSION "0.9"
 
 public Plugin:myinfo = {
 	name = "RN-ShotGunz",
@@ -59,7 +59,7 @@ public OnPluginStart()
 
 	LoadConfig();
 
-	PrintToServer("rn_shotgunz %s loaded", VERSION);
+	LogToGame("rn_shotgunz %s loaded", VERSION);
 	HookEvent("player_spawn",Event_PlayerSpawn);
 }
 
@@ -67,24 +67,24 @@ public OnMapStart()
 {
 	new idx = FindEntityByClassname(-1,"game_weapon_manager");
 	if(idx == -1 ){
-//		PrintToServer("rn-shotgunz: running on this map");
+		PrintToServer("rn-shotgunz: running on this map");
 	} else {
-		PrintToServer("rn-shotgunz: MAP has a game_weapon_manager; disabling for this map.");
+		LogToGame("rn-shotgunz: MAP has a game_weapon_manager; disabling for this map.");
 		maphasmanager = true;
 	}
 
 	idx = FindEntityByClassname(-1,"game_player_equip");
 	if(idx == -1 ){
-//		PrintToServer("rn-shotgunz: running on this map");
+		PrintToServer("rn-shotgunz: running on this map");
 	} else {
-		PrintToServer("rn-shotgunz: MAP has a game_player_equip; disabling for this map.");
+		LogToGame("rn-shotgunz: MAP has a game_player_equip; disabling for this map.");
 		maphasmanager = true;
 	}
 }
 public OnClientPutInServer(client)	// from superlogs-hl2mp.sp
 {
 	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
-	PrintToServer("rn-shotgunz: OnClientPutInServer(%d)",client);
+//	PrintToServer("rn-shotgunz: OnClientPutInServer(%d)",client);
 }
 
 public OnAllPluginsLoaded()	// from superlogs-hl2mp.sp
@@ -118,6 +118,7 @@ public Action:OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damage
 
 public Action:Event_PlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
 {
+//	PrintToServer("rn-shotgunz: player spawn");
 	if(maphasmanager==true){
 		return(Plugin_Continue);
 	}
@@ -139,7 +140,7 @@ public GivePlayerWeapons(client)
 
 	new wepent;
 
-//	PrintToServer("rn-shotgunz: Event_PlayerSpawn	");
+//	PrintToServer("rn-shotgunz: GivePlayerWeapons(%d)", client);
 	new pluginEnabled = GetConVarInt(FindConVar("shotgunz_enabled"));
 
 	if(pluginEnabled != 1 ){
@@ -194,7 +195,7 @@ public GivePlayerWeapons(client)
 		removeweapon = KvGetNum(configfilefh,"remove",0);
 
 		if(removeweapon == 0 ){
-			PrintToServer("Giving client '%d' '%s' default=%d", client,weapon,defaultw);
+//			PrintToServer("Giving client '%d' '%s' default=%d", client,weapon,defaultw);
 			wepent = Client_GiveWeapon(client,weapon,false);
 
 			if(wepent==INVALID_ENT_REFERENCE){
@@ -225,10 +226,10 @@ public GivePlayerWeapons(client)
 	} while(KvGotoNextKey(configfilefh));
 
 	if(GetConVarBool(autochangewep)==true && strcmp(defaultweapon,"",false) != 0){
-		PrintToServer("rn-shotgunz: use %s", defaultweapon);
+//		PrintToServer("rn-shotgunz: use %s", defaultweapon);
 		FakeClientCommandEx(client,"use %s", defaultweapon);
 	} else {
-		PrintToServer("rn-shotgunz: default weapon change disabled");
+//		PrintToServer("rn-shotgunz: default weapon change disabled");
 	}
 	return(Plugin_Continue);
 }

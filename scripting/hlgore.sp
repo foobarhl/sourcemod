@@ -34,7 +34,7 @@ static Float:PrethinkBuffer;
 const NumWeapons = 8;
 
 #define RAGDOLL_NAME "hl2mp_ragdoll"	// was cs_ragdoll
-#define PHYSICS_NAME "prop_physics"
+#define PHYSICS_NAME "prop_physics_multiplayer"
 
 static String:Weapons[NumWeapons][32] = {"crossbow", "smg1", "ar2", "shotgun", "pistol", "357", "frag", "crowbar" };
 
@@ -56,7 +56,7 @@ new BloodClient[2000];
 
 new Bool:headshots[MAXPLAYERS+1];
 
-#define VERSION "6.0.5"
+#define VERSION "6.0.7"
 
 //Information:
 public Plugin:myinfo =
@@ -322,7 +322,7 @@ stock CalculateDirection(Float:ClientOrigin[3], Float:AttackerOrigin[3], Float:D
 }
 public Action:Gib_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damagetype)
 {
-	PrintToServer("Gib took damage");
+//	PrintToServer("Gib took damage");
 }
 
 //Gib:
@@ -369,9 +369,11 @@ stock Gib(Float:Origin[3], Float:Direction[3], String:Model[])
 #endif
 
 		
+//		SetEntityFlags(Ent,1048576);
 		DispatchKeyValue(Ent,"spawnflags","1049600");
 		DispatchKeyValue(Ent,"physicsmode","1");
 		DispatchKeyValue(Ent,"health","90");
+		DispatchKeyValue(Ent,"damage","10");
 		DispatchKeyValue(Ent,"inertiaScale","1");		
 		DispatchKeyValueFloat(Ent,"ExplodeDamage",150.0);
 		DispatchKeyValueFloat(Ent,"ExplodeRadius",400.0);
@@ -702,11 +704,19 @@ public EventDeath(Handle:Event, const String:Name[], bool:Broadcast)
 
 			//Animate:
 //			RandomGib(Origin,"models/props_borealis/bluebarrel001.mdl");
+#if 1
 			RandomGib(Origin, "models/Gibs/HGIBS.mdl");
 			RandomGib(Origin, "models/Gibs/HGIBS_rib.mdl");
 			RandomGib(Origin, "models/Gibs/HGIBS_spine.mdl");
 			RandomGib(Origin, "models/Gibs/HGIBS_scapula.mdl");
+#else 
 
+			RandomGib(Origin, "models/z-quakegibs/quakemdl/skull.mdl");
+			RandomGib(Origin, "models/z-quakegibs/quakemdl/leg.mdl");
+			RandomGib(Origin, "models/z-quakegibs/quakemdl/intestine.mdl");
+//			RandomGib(Origin, "models/z-quakegibs/quakemdl/forearms.mdl");
+			RandomGib(Origin, "models/z-quakegibs/quakemdl/chest.mdl");
+#endif
 			//Remove Body:
 			if(GetConVarBool(hGibs) && GetConVarBool(hRemoveBody)) RemoveBody(Client);
 
@@ -806,11 +816,24 @@ public OnMapStart()
 {
 
 	//Gibs:
-	PrecacheModel("models/props_borealis/bluebarrel001.mdl",true);
+#if 1
 	PrecacheModel("models/Gibs/HGIBS.mdl", true);
 	PrecacheModel("models/Gibs/HGIBS_rib.mdl", true);
 	PrecacheModel("models/Gibs/HGIBS_spine.mdl", true);
 	PrecacheModel("models/Gibs/HGIBS_scapula.mdl", true);
+#else
+	AddFileToDownloadsTable("models/z-quakegibs/quakemdl/skull.mdl");
+	AddFileToDownloadsTable("models/z-quakegibs/quakemdl/leg.mdl");
+	AddFileToDownloadsTable("models/z-quakegibs/quakemdl/intestine.mdl");
+//	AddFileToDownloadsTable("models/z-quakegibs/quakemdl/forearms.mdl");
+	AddFileToDownloadsTable("models/z-quakegibs/quakemdl/chest.mdl");
+
+	PrecacheModel("models/z-quakegibs/quakemdl/skull.mdl",true);
+	PrecacheModel("models/z-quakegibs/quakemdl/leg.mdl",true);
+	PrecacheModel("models/z-quakegibs/quakemdl/intestine.mdl",true);
+//	PrecacheModel("models/z-quakegibs/quakemdl/forearms.mdl",true);
+	PrecacheModel("models/z-quakegibs/quakemdl/chest.mdl",true);
+#endif
 
 	//Precache:
 	ForcePrecache("blood_impact_red_01_droplets");
@@ -876,4 +899,8 @@ public OnPluginStart()
 	hMinRemove = CreateConVar("sm_gib_remove_minsecs","15.0","Minimum amount of time gibs should hang around for");
 	hMaxRemove = CreateConVar("sm_gib_remove_maxsecs","30.0","Maximum amount of time gibs should hang around for");
 	hGibCollisionGroup = CreateConVar("sm_gib_collision_group","0","Collision group Gibs should be grouped with");
+
+
+
+
 }
