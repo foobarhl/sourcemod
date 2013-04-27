@@ -28,7 +28,7 @@
 #include <sdktools_sound.inc>
 #include <sdkhooks>
 
-#define VERSION "0.8e"
+#define VERSION "0.8f"
 
 public Plugin:myinfo = {
 	name = "RN-ShotGunz",
@@ -225,7 +225,10 @@ public GivePlayerWeapons(client)
 	} while(KvGotoNextKey(configfilefh));
 
 	if(GetConVarBool(autochangewep)==true && strcmp(defaultweapon,"",false) != 0){
+		PrintToServer("rn-shotgunz: use %s", defaultweapon);
 		FakeClientCommandEx(client,"use %s", defaultweapon);
+	} else {
+		PrintToServer("rn-shotgunz: default weapon change disabled");
 	}
 	return(Plugin_Continue);
 }
