@@ -28,7 +28,7 @@
 #include <sdktools_sound.inc>
 #include <sdkhooks>
 
-#define VERSION "0.9"
+#define VERSION "0.92"
 
 public Plugin:myinfo = {
 	name = "RN-ShotGunz",
@@ -40,11 +40,15 @@ public Plugin:myinfo = {
 
 #define USE_WEAPON_FAKECOMMAND 0
 
+#define MAPMANAGER_ACTION_DISABLE	0
+#define MAPMANAGER_ACTION_REMOVE	1
+
 new String:configfile[PLATFORM_MAX_PATH]="";
 new Handle:configfilefh = INVALID_HANDLE;
 new Handle:cv_disablering = INVALID_HANDLE;
 new Handle:autochangewep = INVALID_HANDLE;
 new Handle:usetimer = INVALID_HANDLE;
+new Handle:mapmanageraction = INVALID_HANDLE;
 new Handle:maphasmanager = false;
 
 public OnPluginStart()
@@ -52,6 +56,7 @@ public OnPluginStart()
 	CreateConVar("rn_shotgunz_version", VERSION, "Version of this mod", FCVAR_DONTRECORD|FCVAR_PLUGIN|FCVAR_NOTIFY);	
 	CreateConVar("shotgunz_enabled","1","Enable/disable shotgunz plugin");		// set to 1 to enable this plugin. do not rename this cvar.
 	CreateConVar("rn_noearbleed","1","Disables explosion ringing");
+	mapmanageraction = CreateConVar("shotgunz_wepmanageraction","0","Action to take if a map has a weapon manager or player_equip.  0 = Disable, 1 = remove from map");
 
 	// debugging cvars
 	autochangewep = CreateConVar("shotgunz_autochangeweapon","1","Specifies whether to change player weapon to one marked default");
@@ -61,24 +66,42 @@ public OnPluginStart()
 
 	LogToGame("rn_shotgunz %s loaded", VERSION);
 	HookEvent("player_spawn",Event_PlayerSpawn);
+	RegAdminCmd("shotgunz_status", ReportStatus, ADMFLAG_GENERIC, "status");
 }
 
 public OnMapStart()
 {
+	maphasmanager = false;
 	new idx = FindEntityByClassname(-1,"game_weapon_manager");
 	if(idx == -1 ){
 		PrintToServer("rn-shotgunz: running on this map");
 	} else {
-		LogToGame("rn-shotgunz: MAP has a game_weapon_manager; disabling for this map.");
-		maphasmanager = true;
+		if(GetConVarInt(mapmanageraction) == MAPMANAGER_ACTION_DISABLE){
+			LogToGame("rn-shotgunz: MAP has a game_weapon_manager; disabling for this map.");
+			maphasmanager = true;
+		} else if(GetConVarInt(mapmanageraction) == MAPMANAGER_ACTION_REMOVE){
+			LogToGame("rn-shotgunz: MAP has a game_weapon_manager; removing from map");
+			AcceptEntityInput(idx, "Kill");
+		} else {
+			LogToGame("rn-shotgunz: MAP has a game_weapon_manager; unsupported action %d configured!", GetConVarInt(mapmanageraction));
+		}
+
 	}
 
 	idx = FindEntityByClassname(-1,"game_player_equip");
 	if(idx == -1 ){
 		PrintToServer("rn-shotgunz: running on this map");
 	} else {
-		LogToGame("rn-shotgunz: MAP has a game_player_equip; disabling for this map.");
-		maphasmanager = true;
+		if(GetConVarInt(mapmanageraction) == MAPMANAGER_ACTION_DISABLE){
+			LogToGame("rn-shotgunz: MAP has a game_player_equip; disabling for this map");
+			maphasmanager = true;
+		} else if(GetConVarInt(mapmanageraction) == MAPMANAGER_ACTION_REMOVE){
+			LogToGame("rn-shotgunz: MAP has a game_player_equip; removing from map");
+			AcceptEntityInput(idx, "Kill");
+
+		} else {
+			LogToGame("rn-shotgunz: MAP has a game_player_equip; unsupported action %d configured!", GetConVarInt(mapmanageraction));
+		}
 	}
 }
 public OnClientPutInServer(client)	// from superlogs-hl2mp.sp
@@ -142,7 +165,7 @@ public GivePlayerWeapons(client)
 
 //	PrintToServer("rn-shotgunz: GivePlayerWeapons(%d)", client);
 	new pluginEnabled = GetConVarInt(FindConVar("shotgunz_enabled"));
-
+	
 	if(pluginEnabled != 1 ){
 		PrintToServer("rn-shotgunz disabled");
 		return(Plugin_Handled);	
@@ -162,6 +185,8 @@ public GivePlayerWeapons(client)
 	decl String:defaultweapon[20] = "";
 	new removeweapon=0;
 	new defaultw=false;
+
+
 /* The GTX seems to override Client_GiveWeaponAndAmmo params, so this is commented out for now. */
 /*
 	new primaryclip;
@@ -215,12 +240,10 @@ public GivePlayerWeapons(client)
 				}
 			}
 		} else {
-//			PrintToServer("Scheduling removal %s from %d", weapon, client);
-/*
-			CreateDataTimer(0.9, RemoveWeapon, param);
-			WritePackCell(param, client);
-			WritePackString(param, weapon);*/
-
+			new Handle:pack = CreateDataPack();
+			WritePackCell(pack, client);
+			WritePackString(pack, weapon);
+			CreateTimer(0.1,RemoveWeapon,pack);
 		}
 
 	} while(KvGotoNextKey(configfilefh));
@@ -241,7 +264,7 @@ public Action:RemoveWeapon(Handle:Timer, any: param)
 	new client = ReadPackCell(param);
 
 	ReadPackString(param, weapon, sizeof(weapon));
-//	PrintToServer("Removing %s from %d", weapon, client);
+	PrintToServer("Removing %s from %d", weapon, client);
 	Client_RemoveWeapon(client, weapon);
 }
 
@@ -264,5 +287,13 @@ public LoadConfig()
 	KvRewind(configfilefh);
 
 	return(0);
+}
+
+
+
+public Action:ReportStatus(client, args)
+{
+	PrintToConsole(client, "rn-shotgunz version %s running", VERSION);
+	PrintToConsole(client, " maphasmanager: %d, mapmanageraction: %d", maphasmanager, GetConVarInt(mapmanageraction));
 }
 
