@@ -40,7 +40,7 @@
 
 #include <sdktools_sound.inc>
 
-#define VERSION  "0.6"
+#define VERSION  "0.4"
 
 public Plugin:myinfo = {
 	name = "RN-Trails",
@@ -68,19 +68,31 @@ new g_OrangeGlowSprite;
 new g_WhiteGlowSprite;
 
 new g_BlueLaser;
+new g_Gibs;
 
 new hitGroups[MAXPLAYERS+1];
 
 public OnPluginStart()
 {
-
 	CreateConVar("rn_trails_version", VERSION, "Version of this mod", FCVAR_DONTRECORD|FCVAR_PLUGIN|FCVAR_NOTIFY);
-//	SetRandomSeed(GetEntineTime());
+
+	HookEvent("player_death",Event_PlayerDeath);
+	HookEvent("player_hurt",Event_PlayerHurt);
+#if 0
+	for(new i=1;i<MaxClients;i++){
+		if(IsClientInGame(i))
+		{
+//			SDKHook(i, SDKHook_TraceAttackPost,Event_TrackAttack);
+//			SDKHook(i, SDKHook_OnTakeDamagePost,Event_SdkHookOnTakeDamagePost);
+		}
+	}
+#endif
 }
 
 public OnMapStart()
 {
 	LoadConfig();
+	g_Gibs = PrecacheModel("models/gibs/hgibs.mdl");
 	smokeModel1 = PrecacheModel("materials/effects/fire_cloud1.vmt",true);
 	smokeModel2 = PrecacheModel("materials/effects/fire_cloud2.vmt",true);
 	firelineModel =  PrecacheModel("materials/sprites/fire.vmt",true);
@@ -98,10 +110,33 @@ public OnMapStart()
 	g_WhiteGlowSprite = PrecacheModel("materials/sprites/glow1.vmt",true);
 }
 
+public OnClientPutInServer(client)
+{
+#if 0
+	SDKHook(client, SDKHook_TraceAttackPost,Event_TrackAttack);
+//	SDKHook(client, SDKHook_OnTakeDamagePost,Event_SdkHookOnTakeDamagePost);
+#endif
+}
+
+public Action:Event_TrackAttack(victim, &attacker, &inflictor, &Float:damage, &damagetype, &ammotype, hitbox, hitgroup)
+{
+	PrintToServer("TraceAttack: victim=%d,inflictor=%d,hitgroup=%d",victim,inflictor,hitgroup);
+}
+public Event_SdkHookOnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagetype, weapon, const Float:damageForce[3], const Float:damagePosition[3])
+{
+
+
+	new Float:clipos[3];
+	GetClientEyePosition(victim,clipos);
+	new vecDistance = GetVectorDistance(clipos,damagePosition);
+	PrintToServer("Victim %d hurt by %d distance=%f",victim,weapon,vecDistance);
+
+//	hitGroups[victim]=hitgroup;
+}
 public OnGameFrame()
 {
 	new entid = -1;
-	new Float:position[3];
+	new position[3];
 	decl String:entityname[100];
 	KvRewind(configfilefh);
 	KvGotoFirstSubKey(configfilefh);
@@ -109,7 +144,7 @@ public OnGameFrame()
 	decl String:effect[10];
 	decl String:effect2[10];
 	new Float:framerate=0.01;
-	new Float:scale = 1.0;
+	new Float:scale = 1;
 
 	do
 	{
@@ -174,22 +209,22 @@ public LoadConfig()
 
 }
 
-public smoke(const Float:vec[3], const Float:smokescale, const Float:smokeframerate)
+public smoke(Float:vec[3],smokescale,smokeframerate)
 {
 	TE_SetupSmoke(vec, smokeModel1, smokescale, smokeframerate);
-//	TE_SetupSmoke(vec, smokeModel2, smokescale, smokeframerate);
+	TE_SetupSmoke(vec, smokeModel2, smokescale, smokeframerate);
 	TE_SendToAll();
 }
 
 
-public spark(const Float:position[3], const Float:scale, const Float:framerate)
+public spark(Float:position[3],scale,framerate)
 {
 	new Float:dir[3]={0.0,0.0,0.0}
 	TE_SetupSparks(position,dir,scale,framerate);
 	TE_SendToAll();
 }
 
-public dust(Float:position[3], Float:scale, Float:framerate)
+public dust(Float:position[3],scale,framerate)
 {
 	new Float:dir[3]={0.0,0.0,0.0};
 	TE_SetupDust(position,dir,scale,framerate);
@@ -207,10 +242,10 @@ public energy(Float:position[3])
 
 public beam(Float:startvec[3])
 {
-	new Float:endvec[3]={0.0,0.0,0.0};
-	endvec[0] = startvec[0]+2.0;
-	endvec[1] = startvec[1]+2.0;
-	endvec[2] = startvec[2]+2.0;
+	new endvec[3]={0,0,0};
+	endvec[0] = startvec[0]+2;
+	endvec[1] = startvec[1]+2;
+	endvec[2] = startvec[2]+2;
 
 
 //	fire_line(startvec,endvec);
@@ -286,11 +321,9 @@ public sphere(Float:vec[3])
 	direction[1] = 0.0;
 	direction[2] = 0.0;
 	radius = GetRandomFloat(75.0,150.0);
-	new rand;
-
+	new rand = GetRandomInt(0,6);
 	for (new i=0;i<50;i++)
 	{
-		rand = GetRandomInt(0,6);
 		delay = GetRandomFloat(0.0,0.5);
 		bright = GetRandomInt(128,255);
 		live = 2.0 + delay;
@@ -326,3 +359,63 @@ public explode(Float:vec[3])
 
 
 
+public Action:Event_PlayerHurt(Handle:event, const String:name[], bool:dontBroadcast)
+{
+//	new attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
+	new victim   = GetClientOfUserId(GetEventInt(event, "userid"));
+	new headshot   = (GetEventInt(event, "health") == 0 && GetEventInt(event, "hitgroup") == 1);
+	PrintToServer("Victim health=%d hitgroup=%d",GetEventInt(event, "health") ,GetEventInt(event, "hitgroup"));
+
+	return(Plugin_Handled);
+}
+
+public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroadcast)
+{
+	new weapon[40];
+
+	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	new clivec[3] = {0,0,0};
+//	new angles[3] = {0,0,0};
+	GetEventString(event,"weapon",weapon,sizeof(weapon));
+	PrintToServer("Client died by %s",weapon);
+
+	if(strcmp(weapon,"crossbow_bolt",false)==0){
+		PrintToServer("Player killed by crossbow");
+		GetClientAbsOrigin(client,clivec);
+		explode(clivec);
+		dust(clivec,1.0,1.0);
+		sphere(clivec);	// this is fireworks
+	}
+
+	return(Plugin_Continue);
+}
+
+stock Gib_Skull(Client)
+{
+	//Create:
+	new Gib_Ent = CreateEntityByName("env_blood");
+	if (Gib_Ent == -1)
+		return;
+
+	//Set up:
+	DispatchSpawn(Gib_Ent);
+	DispatchKeyValue(Gib_Ent, "spawnflags", "1");
+	DispatchKeyValue(Gib_Ent, "m_iGibs", "1");
+	DispatchKeyValue(Gib_Ent, "delay", "0.1");
+	DispatchKeyValue(Gib_Ent, "m_flVelocity", "10");
+	DispatchKeyValue(Gib_Ent, "m_flVariance", "10");
+	DispatchKeyValue(Gib_Ent, "m_flGibLife", "5");
+	DispatchKeyValue(Gib_Ent, "renderfx", "0");
+	DispatchKeyValue(Gib_Ent, "rendermode", "0");
+	DispatchKeyValue(Gib_Ent, "renderamt", "255");
+	DispatchKeyValue(Gib_Ent, "shootsounds", "3");
+	DispatchKeyValue(Gib_Ent, "simulation", "1");
+	DispatchKeyValue(Gib_Ent, "skin", "1");
+	DispatchKeyValue(Gib_Ent, "nogibshadows", "true");
+	DispatchKeyValue(Gib_Ent, "shootmodel", "models/gibs/hgibs.mdl");
+
+	//Emit:
+	AcceptEntityInput(Gib_Ent, "Shoot", Client);
+	RemoveEdict(Gib_Ent);
+
+}
