@@ -28,7 +28,7 @@
 #include <sdktools_sound.inc>
 #include <sdkhooks>
 
-#define VERSION "0.92"
+#define VERSION "0.93"
 
 public Plugin:myinfo = {
 	name = "RN-ShotGunz",
@@ -49,30 +49,38 @@ new Handle:cv_disablering = INVALID_HANDLE;
 new Handle:autochangewep = INVALID_HANDLE;
 new Handle:usetimer = INVALID_HANDLE;
 new Handle:mapmanageraction = INVALID_HANDLE;
-new Handle:maphasmanager = false;
+new bool:maphasmanager = false;
+new Handle:shotgunz_enabled = INVALID_HANDLE;
 
 public OnPluginStart()
 {
 	CreateConVar("rn_shotgunz_version", VERSION, "Version of this mod", FCVAR_DONTRECORD|FCVAR_PLUGIN|FCVAR_NOTIFY);	
-	CreateConVar("shotgunz_enabled","1","Enable/disable shotgunz plugin");		// set to 1 to enable this plugin. do not rename this cvar.
 	CreateConVar("rn_noearbleed","1","Disables explosion ringing");
-	mapmanageraction = CreateConVar("shotgunz_wepmanageraction","0","Action to take if a map has a weapon manager or player_equip.  0 = Disable, 1 = remove from map");
+
+	shotgunz_enabled = CreateConVar("shotgunz_enabled","1","Enable/disable shotgunz plugin");		// set to 1 to enable this plugin. do not rename this cvar.
+	mapmanageraction = CreateConVar("shotgunz_wepmanageraction","1","Action to take if a map has a weapon manager or player_equip.  0 = Disable shotgunz on map, 1 = remove entity from map");
 
 	// debugging cvars
-	autochangewep = CreateConVar("shotgunz_autochangeweapon","1","Specifies whether to change player weapon to one marked default");
-	usetimer = CreateConVar("shotgunz_usetimer","0","Specifies whether to use a timer");
+	autochangewep = CreateConVar("shotgunz_autochangeweapon","1","DEBUGGING ONLY: Enables/disabled default weapon");
+	usetimer = CreateConVar("shotgunz_usetimer","0","DEBUGGING ONLY: Specifies whether to use a timer or to give player weapons in spawn event");
 
-	LoadConfig();
+	AutoExecConfig(true,"rn-shotgunz");	// cvar configs
+
+	LoadConfig();			// load the weapon configs
+
+	HookEvent("player_spawn",Event_PlayerSpawn);
+
+	RegAdminCmd("shotgunz_status", ReportStatus, ADMFLAG_GENERIC, "status");
 
 	LogToGame("rn_shotgunz %s loaded", VERSION);
-	HookEvent("player_spawn",Event_PlayerSpawn);
-	RegAdminCmd("shotgunz_status", ReportStatus, ADMFLAG_GENERIC, "status");
 }
 
 public OnMapStart()
 {
 	maphasmanager = false;
-	new idx = FindEntityByClassname(-1,"game_weapon_manager");
+	new idx;
+#if 0
+	idx = FindEntityByClassname(-1,"game_weapon_manager");
 	if(idx == -1 ){
 		PrintToServer("rn-shotgunz: running on this map");
 	} else {
@@ -87,6 +95,7 @@ public OnMapStart()
 		}
 
 	}
+#endif
 
 	idx = FindEntityByClassname(-1,"game_player_equip");
 	if(idx == -1 ){
@@ -104,6 +113,8 @@ public OnMapStart()
 		}
 	}
 }
+
+
 public OnClientPutInServer(client)	// from superlogs-hl2mp.sp
 {
 	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
@@ -142,15 +153,19 @@ public Action:OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damage
 public Action:Event_PlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
 {
 //	PrintToServer("rn-shotgunz: player spawn");
+
 	if(maphasmanager==true){
 		return(Plugin_Continue);
 	}
+
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+
 	if(GetConVarBool(usetimer)==false){
 		GivePlayerWeapons(client);
 	} else {
 		CreateTimer(5.0,GivePlayerWeaponsTimer,client);
 	}
+
 	return(Plugin_Continue);
 }
 
@@ -158,15 +173,13 @@ public Action:GivePlayerWeaponsTimer(Handle:timer, any:client)
 {
 	GivePlayerWeapons(client);
 }
+
 public GivePlayerWeapons(client)
 {
 
 	new wepent;
 
-//	PrintToServer("rn-shotgunz: GivePlayerWeapons(%d)", client);
-	new pluginEnabled = GetConVarInt(FindConVar("shotgunz_enabled"));
-	
-	if(pluginEnabled != 1 ){
+	if(GetConVarInt(shotgunz_enabled) != 1 ){
 		PrintToServer("rn-shotgunz disabled");
 		return(Plugin_Handled);	
 	}
