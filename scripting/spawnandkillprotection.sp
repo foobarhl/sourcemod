@@ -6,7 +6,7 @@
 #include <sdkhooks>
 #include <smlib>
 
-#define PLUGIN_VERSION "1.4.0foobar1"
+#define PLUGIN_VERSION "1.4.2"
 
 #define KILLPROTECTION_DISABLE_BUTTONS (IN_ATTACK | IN_JUMP | IN_DUCK | IN_FORWARD | IN_BACK | IN_USE | IN_LEFT | IN_RIGHT | IN_MOVELEFT | IN_MOVERIGHT | IN_ATTACK2 | IN_RUN | IN_SPEED | IN_WALK | IN_GRENADE1 | IN_GRENADE2)
 #define SHOOT_DISABLE_BUTTONS (IN_ATTACK | IN_ATTACK2)
@@ -45,6 +45,7 @@ new Handle:takedamage                       = INVALID_HANDLE;
 new Handle:punishmode                       = INVALID_HANDLE;
 new Handle:notify                           = INVALID_HANDLE;
 new Handle:disableonmoveshoot               = INVALID_HANDLE;
+new Handle:disableweapondamage              = INVALID_HANDLE;
 new Handle:disabletime                      = INVALID_HANDLE;
 new Handle:disabletime_team1                = INVALID_HANDLE;
 new Handle:disabletime_team2                = INVALID_HANDLE;
@@ -108,6 +109,7 @@ public OnPluginStart()
 	Sakp_CreateConVar("noblock", "1", "1 = enable noblock when protected, 0 = disabled feature");
 	HookConVarChange(enabled, ConVarChange_Noblock);
 	disableonmoveshoot       = Sakp_CreateConVar("disableonmoveshoot", "1", "0 = don't disable, 1 = disable the spawnprotection when player moves or shoots, 2 = disable the spawn protection when shooting only");
+	disableweapondamage      = Sakp_CreateConVar("disableweapondamage", "0", "0 = spawn protected players can inflict damage, 1 = spawn protected players inflict no damage");
 	disabletime              = Sakp_CreateConVar("disabletime", "0", "Time in seconds until the protection is removed after the player moved and/or shooted, 0 = immediately");
 	disabletime_team1        = Sakp_CreateConVar("disabletime_team1", "-1", "same as sakp_disabletime, but for team 2 only (overrides sakp_disabletime if not set to -1)");
 	disabletime_team2        = Sakp_CreateConVar("disabletime_team2", "-1", "same as sakp_disabletime, but for team 2 only (overrides sakp_disabletime if not set to -1)");
@@ -383,6 +385,13 @@ public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &d
 
 		damage = 0.0;
 		return Plugin_Changed;
+	}
+
+	if(GetConVarBool(disableweapondamage) == true && isKillProtected[attacker]){
+//		ProtectedPlayerHurted(attacker, inflictor, RoundToFloor(damage));
+
+		damage = 0.0;
+		return Plugin_Changed;		
 	}
 
 	return Plugin_Continue;
