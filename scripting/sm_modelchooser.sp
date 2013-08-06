@@ -23,9 +23,9 @@
 #include <smlib>
 #include <clientprefs>
 
-#define VERSION "0.2"
+#define VERSION "0.3"
 
-new String:Models[19][46] = {
+new String:Models[19][70] = {
 	"models/combine_soldier.mdl",
 	"models/combine_soldier_prisonguard.mdl",
 	"models/combine_super_soldier.mdl",
@@ -87,6 +87,39 @@ public MenuModelPref(client, CookieMenuAction:action, any:info, String:buffer[],
 
 public Action:MenuModel(client,args)
 {
+	decl String:model[75];
+	decl String:modelc[75];
+	if(GetCmdArgs()>0){
+		GetCmdArg(1, model, sizeof(model));
+		if(StrEqual(model,"list")){
+			new String:helptext[1024];
+			decl String:buffer[75];
+			StrCat(helptext, sizeof(helptext), "Available models: ");
+			for(new i=0; i<sizeof(Models); i++){
+		                File_GetFileName(Models[i],buffer,sizeof(buffer));
+				StrCat(helptext, sizeof(helptext),  " ");
+				StrCat(helptext, sizeof(helptext), buffer);
+
+			}
+			PrintToChat(client, helptext);
+			return(Plugin_Handled);
+			
+		}
+		if(StrContains(model, "_")!=-1){
+			Format(modelc, sizeof(modelc), "%s.mdl", model);	// explicit model
+		} else {
+			Format(modelc, sizeof(modelc), "/%s", model);		// search for first match 
+		}
+
+		for(new i=0; i<sizeof(Models);  i++){ 
+			if(StrContains(Models[i], modelc, false) != -1){
+				changeModel(client, Models[i]);
+				return(Plugin_Handled);
+			}
+		}
+		PrintToChat(client, "sm_modelchooser: I don't know what model that is");
+		return(Plugin_Handled);
+	}
 	ShowModelMenu(client);
 	return(Plugin_Handled);
 }
@@ -109,6 +142,8 @@ ShowModelMenu(client)
 
 public changeModel(client,String:model[])
 {
+
+//	SetEntityModel(client, model);
 	ClientCommand(client, "cl_playermodel %s", model);
 	SetEntityRenderColor(client, 255, 255, 255, 255);
 }
