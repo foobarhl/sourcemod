@@ -49,7 +49,7 @@ new String:Models[19][70] = {
 
 public Plugin:myinfo =
 {
-	name = "Model Chooser",
+	name = "HL2DM Model Chooser",
 	author = "[foo] bar",
 	description = "Give players a menu to select their model",
 	version = VERSION,
@@ -60,7 +60,7 @@ public OnPluginStart()
 {
 	new i;
 
-	CreateConVar("sm_modelchooser_version", VERSION, "Version of this plugin",  FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	CreateConVar("sm_modelchooser_hl2dm_version", VERSION, "Version of this plugin",  FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
 
 	for(i=0;i<sizeof(Models);i++){
 		PrecacheModel(Models[i]);
