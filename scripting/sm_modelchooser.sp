@@ -59,6 +59,9 @@ public Plugin:myinfo =
 public OnPluginStart()
 {
 	new i;
+
+	CreateConVar("sm_modelchooser_version", VERSION, "Version of this plugin",  FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
+
 	for(i=0;i<sizeof(Models);i++){
 		PrecacheModel(Models[i]);
 	}
