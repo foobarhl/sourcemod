@@ -22,7 +22,7 @@
 
 #define NAME "sm_hlstatsrcon"
 
-#define VERSION "0.02"
+#define VERSION "0.03"
 
 public Plugin:myinfo = {
 	name = "Limited RCON Control for HLStats",
@@ -38,6 +38,10 @@ new Handle:cv_hlstats_rconpw = INVALID_HANDLE;
 new Handle:cv_debug = INVALID_HANDLE;
 new String:hlstats_ipaddress[16];
 new String:hlstats_rconpw[50];
+
+new const String:allowedCommands[][] = { 
+	"stats", "status", "hlx_sm_psay", "hlx_sm_csay", "hlx_sm_hint", "sm_chat"
+};
 
 public OnPluginStart()
 {
@@ -88,12 +92,12 @@ public Action:SMRCon_OnCommand(rconId, const String:address[], const String:comm
 {
 	if(!strcmp(address, hlstats_ipaddress)) {
 		decho("Got command '%s' from %s", address, command);
-		if(!strcmp(command,"stats") || !strcmp(command,"status")){
-			allow=true;
-			return Plugin_Changed;
-		} else {
-			allow = false;
-			return Plugin_Changed;
+		for(new i = 0; i < sizeof(allowedCommands); i++){
+//			PrintToServer("allowedCommands[%s] == %s = ?", allowedCommands[i], command);
+			if(StrEqual(command, allowedCommands[i])==true){
+				allow=true;
+				return Plugin_Changed;
+			}
 		}
 	}
 	return Plugin_Continue;
