@@ -1,0 +1,1 @@
+../../3rdparty-dev/rn_trails/addons/sourcemod/scripting/rn-trails.sp
