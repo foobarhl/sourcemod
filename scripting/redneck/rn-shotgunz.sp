@@ -2,6 +2,8 @@
  * rn-shotgunz.sp: Redneck's Customizable weapons and auto switcher 
  * Thrown together by [foo] bar <foobarhl@gmail.com> | http://steamcommunity.com/id/foo-bar/
  *
+ * THIS PLUGIN IS OBSOLETE AND UNSUPPORTED.  USE sm_weaponmanager INSTEAD. https://foo-games.com/downloads/weapon-manager/
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -17,10 +19,6 @@
  *
  */
 
-/*
- * PLAY AT THE REDNECK SERVERS!  http://steamcommunity.com/groups/redneckgraveyard 
- * The Redneck Servers are a place to come 'n play, shoot sum people 'n have sum family friendly fun! 
- */
 
 
 #include <sourcemod>
