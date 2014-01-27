@@ -55,7 +55,7 @@ public OnPluginStart()
 	CreateConVar("rn_shotgunz_version", VERSION, "Version of this mod", FCVAR_DONTRECORD|FCVAR_PLUGIN|FCVAR_NOTIFY);	
 	CreateConVar("rn_noearbleed","1","Disables explosion ringing");
 
-	shotgunz_enabled = CreateConVar("shotgunz_enabled","1","Enable/disable shotgunz plugin");		// set to 1 to enable this plugin. do not rename this cvar.
+	shotgunz_enabled = CreateConVar("shotgunz_enabled","0","Enable/disable shotgunz plugin");		// set to 1 to enable this plugin. do not rename this cvar.
 	mapmanageraction = CreateConVar("shotgunz_wepmanageraction","1","Action to take if a map has a weapon manager or player_equip.  0 = Disable shotgunz on map, 1 = remove entity from map");
 
 	// debugging cvars
@@ -70,7 +70,7 @@ public OnPluginStart()
 
 	RegAdminCmd("shotgunz_status", ReportStatus, ADMFLAG_GENERIC, "status");
 
-	LogToGame("rn_shotgunz %s loaded", VERSION);
+	LogToGame("rn_shotgunz %s loaded.  DEPRECATED.", VERSION);
 }
 
 public OnMapStart()
