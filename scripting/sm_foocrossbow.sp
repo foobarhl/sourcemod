@@ -36,7 +36,7 @@ public Plugin:myinfo = {
 
 public OnPluginStart()
 {
-	CreateConVar("sm_foocross_version", VERSION, "Damage Indicator Sound", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	CreateConVar("sm_foocrossbow_version", VERSION, "Damage Indicator Sound", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
 }
 
 public OnEntityCreated(entity, const String:classname[])
