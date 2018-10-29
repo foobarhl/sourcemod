@@ -21,7 +21,6 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
-#include <smlib>
 
 new entityGroups[4096];
 
