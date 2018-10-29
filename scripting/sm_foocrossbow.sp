@@ -22,16 +22,22 @@
 #include <sdktools>
 #include <sdkhooks>
 
+#define VERSION "0.30"
+
 new entityGroups[4096];
 
 public Plugin:myinfo = {
         name = "[foo] bar's crossbow",
         description = "foo's crossbow",
         author = "[foo] bar",
-        version = "0.02",
+        version = VERSION,
         url = "www.foo-games.com"
 };
 
+public OnPluginStart()
+{
+	CreateConVar("sm_foocross_version", VERSION, "Damage Indicator Sound", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
+}
 
 public OnEntityCreated(entity, const String:classname[])
 {
@@ -39,7 +45,6 @@ public OnEntityCreated(entity, const String:classname[])
 		if(strcmp(classname, "crossbow_bolt", true) == 0){
 			SDKHook(entity, SDKHook_StartTouch, Hook_EntityStartTouch);
 			SDKHook(entity, SDKHook_EndTouch, Hook_EntityEndTouch);
-		} else {
 		}
 	}
 }
