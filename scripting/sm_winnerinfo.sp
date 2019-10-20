@@ -26,7 +26,7 @@
 #include <sdkhooks>
 #include <smlib>
 
-#define VERSION "0.12"
+#define VERSION "0.12.2"
 #define MAX_PLAYER_NAME 50
 
 //#define TRACK_NON_TRACE_WEAPONS	// Uncomment if you want to track non trace weapons.  This is kinda dodgy
@@ -91,7 +91,6 @@ new Handle:cvarMsgY;
 new Handle:cvarStatusX;
 new Handle:cvarStatusY;
 new Handle:cvarSoundFile;
-new Handle:mp_fraglimit;
 
 #if defined TRACK_NON_TRACE_WEAPONS
 new Handle:nontraceChecks = INVALID_HANDLE;
@@ -100,8 +99,6 @@ new Handle:nontraceChecks = INVALID_HANDLE;
 new UserMsg:VGuiMenu;
 new Handle:hudSynchronizerMsg                  = INVALID_HANDLE;
 new Handle:hudSynchronizerStats                  = INVALID_HANDLE;
-new g_iCrossBowOwnerOffs = -1;
-new g_iTripmineOwnerOffs = -1;
 
 new msgColor[4];
 new statColor[4];
@@ -115,26 +112,16 @@ new String:soundFile[PLATFORM_MAX_PATH];
 
 new UserMsg:gameendMsgId = UserMsg:-1;
 
-new winnerId;
-new winnerScore;
-new winnerDeaths;
-new loserId;
-
 #define NOTIFYTYPE_USERSCOREBOARD 1
 #define NOTIFYTYPE_GAMEEND 2
 
-#if defined TRACK_NON_TRACE_WEAPONS
-	new static const String:missesLabel[] = "Misses";
-#else
-	new static const String:missesLabel[] = "Misses (guns)";
-#endif
 
 public Plugin:myinfo = {
 	name = "sm_winnerinfo",
 	author = "[foo] bar",
 	description = "Displays winner information",
 	version = VERSION,
-	url = "http://www.sixofour.tk/~foobar/"
+	url = "https://www.foo-games.com/"
 };
 
 public OnPluginStart()
@@ -156,13 +143,7 @@ public OnPluginStart()
 	cvarFade = CreateConVar("sm_winnerinfo_fade", "0 0 0 175", "RGBA Color to fade player screens on game end");
 	cvarSoundFile = CreateConVar("sm_winnerinfo_soundfile", "", "Sound file to play on game end");
 
-	g_iCrossBowOwnerOffs = FindSendPropInfo("CCrossbowBolt", "m_hOwnerEntity");
-	g_iTripmineOwnerOffs = FindSendPropInfo("CTripmine", "m_hOwner");
-
-	mp_fraglimit = FindConVar("mp_fraglimit");
-
-	PrintToServer("Crossbow owner Offset = %d", g_iCrossBowOwnerOffs);
-	PrintToServer("Slam owner offset = %d", g_iTripmineOwnerOffs);
+	PrintToServer("sm_winnerinfo by Foo Bar <www.foo-games.com> started - show your appreciation by throwing us a bone! ;) https://foo-games.com/project-donations/");
 
 #if defined TRACK_NON_TRACE_WEAPONS
 	nontraceChecks = CreateStack();
@@ -325,12 +306,6 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 		}
 	}
 
-//	winnerId = attacker;
-//	loserId = victim;
-	if(attacker > 0 && IsClientConnected(attacker)){
-		winnerScore = GetClientFrags(attacker);
-		winnerDeaths = GetClientDeaths(attacker);
-	}
 	return Plugin_Continue;
 }
 	
