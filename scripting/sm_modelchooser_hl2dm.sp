@@ -21,9 +21,10 @@
 #include <sourcemod>
 #include <sdktools>
 #include <smlib>
+#include <morecolors>
 #include <clientprefs>
 
-#define VERSION "0.3"
+#define VERSION "0.4"
 
 new String:Models[19][70] = {
 	"models/combine_soldier.mdl",
@@ -92,22 +93,32 @@ public Action:MenuModel(client,args)
 {
 	decl String:model[75];
 	decl String:modelc[75];
+
 	if(GetCmdArgs()>0){
 		GetCmdArg(1, model, sizeof(model));
-		if(StrEqual(model,"list")){
+		if(StrEqual(model, "")){
+
+		} else if(StrEqual(model,"list")){
 			new String:helptext[1024];
 			decl String:buffer[75];
-			StrCat(helptext, sizeof(helptext), "Available models: ");
+			StrCat(helptext, sizeof(helptext), "{green}Available models{default}: ");
 			for(new i=0; i<sizeof(Models); i++){
 		                File_GetFileName(Models[i],buffer,sizeof(buffer));
 				StrCat(helptext, sizeof(helptext),  " ");
 				StrCat(helptext, sizeof(helptext), buffer);
 
 			}
-			PrintToChat(client, helptext);
+			CPrintToChat(client, helptext);
 			return(Plugin_Handled);
 			
+		} else if(StrEqual(model, "help")){
+			CPrintToChat(client, "{green}Foo's model changer - version %s - www.foo-games.com{default}", VERSION);
+			CPrintToChat(client, "Use {red}!model list{default} to show a list of models");
+			CPrintToChat(client, "Use {red}!model <name of model>{default} to quickly set your model.  eg {olive}!model female_07{default}");
+			CPrintToChat(client, "Use {red}!model{default} to bring up a menu - if the menu does not appear, use {olive}cl_showpluginmessages 1{default} in console to activate");	
+			return(Plugin_Handled);
 		}
+
 		if(StrContains(model, "_")!=-1){
 			Format(modelc, sizeof(modelc), "%s.mdl", model);	// explicit model
 		} else {
@@ -122,7 +133,12 @@ public Action:MenuModel(client,args)
 		}
 		PrintToChat(client, "sm_modelchooser: I don't know what model that is");
 		return(Plugin_Handled);
+	} else {
+		CPrintToChat(client, "{green}Foo's model changer - version %s - www.foo-games.com{default}", VERSION);
+		CPrintToChat(client, " * If the menu doesn't appear, use {red}!model help{default} for more help...");
+		return(Plugin_Handled);
 	}
+
 	ShowModelMenu(client);
 	return(Plugin_Handled);
 }
@@ -150,3 +166,4 @@ public changeModel(client,String:model[])
 	ClientCommand(client, "cl_playermodel %s", model);
 	SetEntityRenderColor(client, 255, 255, 255, 255);
 }
+
