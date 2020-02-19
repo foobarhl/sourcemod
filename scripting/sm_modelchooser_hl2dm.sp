@@ -136,7 +136,6 @@ public Action:MenuModel(client,args)
 	} else {
 		CPrintToChat(client, "{green}Foo's model changer - version %s - www.foo-games.com{default}", VERSION);
 		CPrintToChat(client, " * If the menu doesn't appear, use {red}!model help{default} for more help...");
-		return(Plugin_Handled);
 	}
 
 	ShowModelMenu(client);
